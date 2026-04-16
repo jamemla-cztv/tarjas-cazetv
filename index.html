@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador de Tarjas CazéTV</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --accent: #22c55e;
+    --accent-dim: #16a34a;
+    --accent-glow: rgba(34, 197, 94, 0.15);
+    --text: #f5f5f5;
+    --text-dim: #a3a3a3;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+  }
+
+  .logo span { color: var(--accent); }
+
+  .header-badge {
+    background: var(--accent-glow);
+    color: var(--accent);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .api-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: background 0.2s;
+  }
+
+  .api-status:hover { background: var(--surface2); }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--danger);
+  }
+
+  .status-dot.connected { background: var(--accent); }
+
+  /* Main Layout */
+  .main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 24px;
+    min-height: calc(100vh - 65px);
+  }
+
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; }
+  }
+
+  /* Panels */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .panel-body { padding: 20px; }
+
+  /* Form */
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .form-group select { cursor: pointer; }
+
+  .chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .chip {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .chip:hover { border-color: var(--accent); }
+  .chip.active {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .btn-primary:hover { background: var(--accent-dim); }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); }
+
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+    width: auto;
+  }
+
+  /* Results */
+  .results-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+  }
+
+  .results-empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.3;
+  }
+
+  .results-empty h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-dim);
+  }
+
+  .results-empty p {
+    font-size: 13px;
+    color: var(--text-dim);
+    opacity: 0.7;
+  }
+
+  /* Tarja Cards */
+  .tarja-section {
+    margin-bottom: 24px;
+  }
+
+  .tarja-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tarja-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .tarja-card:hover {
+    border-color: var(--accent);
+    transform: translateX(4px);
+  }
+
+  .tarja-line1 {
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+
+  .tarja-line2 {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+    line-height: 1.3;
+  }
+
+  .tarja-card .copy-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--accent);
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .tarja-card:hover .copy-badge { opacity: 1; }
+  .tarja-card.copied .copy-badge {
+    opacity: 1;
+    background: var(--warning);
+  }
+
+  /* Loading */
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    gap: 16px;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+  }
+
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 480px;
+    width: 90%;
+  }
+
+  .modal h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .modal p {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  /* Copy All Bar */
+  .copy-all-bar {
+    display: flex;
+    gap: 8px;
+    padding: 12px 0 0;
+    border-top: 1px solid var(--border);
+    margin-top: 12px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--accent);
+    color: #000;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    z-index: 300;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Airtable section */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px 0;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label .badge {
+    background: var(--warning);
+    color: #000;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+  }
+
+  .info-text {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">TARJAS<span>TV</span></div>
+    <div class="header-badge">Gerador CazéTV</div>
+  </div>
+  <div class="api-status" onclick="openApiModal()">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">API não configurada</span>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Left Panel: Form -->
+  <div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Dados do Evento</div>
+      </div>
+      <div class="panel-body">
+
+        <div class="form-group">
+          <label>Esporte</label>
+          <select id="sport">
+            <option value="">Selecione...</option>
+            <option value="futebol">Futebol</option>
+            <option value="basquete">Basquete</option>
+            <option value="vôlei">Vôlei</option>
+            <option value="tênis">Tênis</option>
+            <option value="MMA">MMA / Luta</option>
+            <option value="natação">Natação</option>
+            <option value="atletismo">Atletismo</option>
+            <option value="patinação">Patinação</option>
+            <option value="surfe">Surfe</option>
+            <option value="skate">Skate</option>
+            <option value="ginástica">Ginástica</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Competição</label>
+          <input type="text" id="competition" placeholder="Ex: Brasileirão Série A, Libertadores, Copa do Mundo...">
+        </div>
+
+        <div class="form-group">
+          <label>Times / Atletas</label>
+          <input type="text" id="teams" placeholder="Ex: Flamengo x Palmeiras, ou João Fonseca">
+        </div>
+
+        <div class="form-group">
+          <label>Fase / Rodada</label>
+          <input type="text" id="phase" placeholder="Ex: Final, Semifinal, Rodada 12, Fase de grupos...">
+        </div>
+
+        <div class="form-group">
+          <label>Contexto extra (opcional)</label>
+          <textarea id="context" placeholder="Detalhes adicionais: placar, jogador destaque, curiosidades, horário, repórter no local..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Tipos de tarja</label>
+          <div class="chip-group" id="tarjaTypes">
+            <div class="chip active" data-type="abertura">Abertura</div>
+            <div class="chip active" data-type="atleta">Atleta</div>
+            <div class="chip active" data-type="intervalo">Intervalo</div>
+            <div class="chip active" data-type="resultado">Resultado</div>
+            <div class="chip" data-type="reporter">Repórter</div>
+            <div class="chip" data-type="chat">Chat</div>
+            <div class="chip" data-type="transicao">Transição</div>
+            <div class="chip" data-type="promocao">Promoção</div>
+            <div class="chip" data-type="climax">Clímax</div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="generateBtn" onclick="generate()">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          GERAR TARJAS
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel: Results -->
+  <div class="panel" id="resultsPanel">
+    <div class="panel-header">
+      <div class="panel-title">Tarjas Geradas</div>
+      <div style="display:flex;gap:6px" id="resultActions" class="hidden">
+        <button class="btn btn-secondary btn-sm" onclick="copyAllFlowics()">Copiar pro Flowics</button>
+        <button class="btn btn-secondary btn-sm" onclick="copyAllCSV()">Copiar CSV</button>
+      </div>
+    </div>
+    <div class="panel-body" id="resultsBody">
+      <div class="results-empty">
+        <div class="results-empty-icon">📺</div>
+        <h3>Nenhuma tarja gerada ainda</h3>
+        <p>Preencha os dados do evento e clique em "Gerar Tarjas"</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- API Modal -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal">
+    <h3>Configurar API Claude</h3>
+    <p>Insira sua chave da API Anthropic para habilitar a geração por IA. A chave é salva apenas no seu navegador (localStorage) e nunca é enviada para nenhum servidor além da Anthropic.</p>
+    <div class="form-group">
+      <label>API Key</label>
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary btn-sm" onclick="closeApiModal()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="saveApiKey()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== STATE ====================
+let apiKey = localStorage.getItem('cazetv_api_key') || '';
+let generatedTarjas = [];
+
+// ==================== INIT ====================
+document.addEventListener('DOMContentLoaded', () => {
+  updateApiStatus();
+  setupChips();
+});
+
+// ==================== API KEY ====================
+function openApiModal() {
+  document.getElementById('apiModal').classList.add('show');
+  document.getElementById('apiKeyInput').value = apiKey;
+}
+
+function closeApiModal() {
+  document.getElementById('apiModal').classList.remove('show');
+}
+
+function saveApiKey() {
+  apiKey = document.getElementById('apiKeyInput').value.trim();
+  localStorage.setItem('cazetv_api_key', apiKey);
+  updateApiStatus();
+  closeApiModal();
+  showToast('API Key salva!');
+}
+
+function updateApiStatus() {
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  if (apiKey) {
+    dot.classList.add('connected');
+    text.textContent = 'API conectada';
+  } else {
+    dot.classList.remove('connected');
+    text.textContent = 'API não configurada';
+  }
+}
+
+// ==================== CHIPS ====================
+function setupChips() {
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('active'));
+  });
+}
+
+function getSelectedTypes() {
+  return [...document.querySelectorAll('.chip.active')].map(c => c.dataset.type);
+}
+
+// ==================== GENERATE ====================
+async function generate() {
+  const sport = document.getElementById('sport').value;
+  const competition = document.getElementById('competition').value;
+  const teams = document.getElementById('teams').value;
+  const phase = document.getElementById('phase').value;
+  const context = document.getElementById('context').value;
+  const types = getSelectedTypes();
+
+  if (!teams) { showToast('Preencha pelo menos os times/atletas!'); return; }
+  if (types.length === 0) { showToast('Selecione pelo menos um tipo de tarja!'); return; }
+  if (!apiKey) { openApiModal(); return; }
+
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+
+  showLoading();
+
+  try {
+    const tarjas = await callClaude(sport, competition, teams, phase, context, types);
+    generatedTarjas = tarjas;
+    renderResults(tarjas);
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ==================== CLAUDE API ====================
+async function callClaude(sport, competition, teams, phase, context, types) {
+
+  const typeNames = {
+    abertura: 'Abertura / Início de evento',
+    atleta: 'Chamada de atleta/personagem',
+    intervalo: 'Retorno de intervalo',
+    resultado: 'Resultado / Encerramento (gerar opções: vitória de cada lado + empate se aplicável)',
+    reporter: 'Repórter / Bastidor',
+    chat: 'Interação com chat / público',
+    transicao: 'Transição de grade',
+    promocao: 'Promoção / Serviço',
+    climax: 'Momento decisivo / Clímax'
+  };
+
+  const requestedTypes = types.map(t => typeNames[t] || t).join('\n- ');
+
+  const systemPrompt = `Você é o redator de tarjas da CazéTV. Gere textos de lower thirds para transmissão esportiva ao vivo.
+
+REGRAS ABSOLUTAS:
+- Toda tarja tem EXATAMENTE 2 linhas: Linha 1 (Header = impacto/emoção) e Linha 2 (Sub-header = fato/contexto)
+- Tom: oral, caloroso, irreverente, popular, nativo de internet, emocional, rápido
+- CAIXA ALTA em tudo
+- Parece alguém empolgado falando ao vivo, NÃO release ou GC frio
+- Use "tá", "vamo", "cadê", "partiu" quando natural
+- NUNCA use linguagem formal: "inicia-se", "encontra-se", "válido pela"
+- NUNCA seja genérico: "Grande jogo hoje", "Partida importante"
+- Humor afetivo, NUNCA deboche cruel ou diminuição de atleta
+- Em derrota brasileira: acolhimento e valorização, não deboche
+- Emoji com moderação (1-2 por tarja no máximo, só quando reforçar)
+- Gere 2-3 opções por tipo de tarja
+
+Retorne APENAS um JSON válido no formato:
+[
+  {
+    "tipo": "nome do tipo",
+    "opcoes": [
+      { "linha1": "HEADER AQUI", "linha2": "SUB-HEADER AQUI" }
+    ]
+  }
+]
+
+Sem markdown, sem explicação, APENAS o JSON.`;
+
+  const userPrompt = `Gere tarjas CazéTV para este evento:
+
+Esporte: ${sport || 'não especificado'}
+Competição: ${competition || 'não especificada'}
+Times/Atletas: ${teams}
+Fase: ${phase || 'não especificada'}
+Contexto: ${context || 'sem contexto adicional'}
+
+Tipos de tarja pedidos:
+- ${requestedTypes}
+
+Gere 2-3 opções criativas para cada tipo. Retorne APENAS o JSON.`;
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4096,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }]
+    })
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    if (resp.status === 401) throw new Error('API Key inválida. Clique no status da API para reconfigurar.');
+    throw new Error(err.error?.message || `Erro ${resp.status}`);
+  }
+
+  const data = await resp.json();
+  const text = data.content[0].text.trim();
+
+  // Parse JSON from response
+  let json;
+  try {
+    // Try to extract JSON if wrapped in markdown code blocks
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    json = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+  } catch (e) {
+    throw new Error('Erro ao processar resposta da IA. Tente novamente.');
+  }
+
+  return json;
+}
+
+// ==================== RENDER ====================
+function showLoading() {
+  document.getElementById('resultsBody').innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Gerando tarjas no estilo CazéTV...</div>
+    </div>
+  `;
+  document.getElementById('resultActions').classList.add('hidden');
+}
+
+function showError(msg) {
+  document.getElementById('resultsBody').innerHTML = `
+    <div class="results-empty">
+      <div class="results-empty-icon">⚠️</div>
+      <h3>Erro ao gerar</h3>
+      <p>${msg}</p>
+    </div>
+  `;
+}
+
+function renderResults(tarjas) {
+  let html = '';
+
+  tarjas.forEach(section => {
+    html += `<div class="tarja-section">`;
+    html += `<div class="tarja-section-title">${section.tipo}</div>`;
+
+    section.opcoes.forEach((op, i) => {
+      const l1 = escapeHtml(op.linha1);
+      const l2 = escapeHtml(op.linha2);
+      html += `
+        <div class="tarja-card" onclick="copyTarja(this, '${escapeJs(op.linha1)}', '${escapeJs(op.linha2)}')">
+          <div class="copy-badge">COPIAR</div>
+          <div class="tarja-line1">${l1}</div>
+          <div class="tarja-line2">${l2}</div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+  });
+
+  document.getElementById('resultsBody').innerHTML = html;
+  document.getElementById('resultActions').classList.remove('hidden');
+}
+
+// ==================== COPY ====================
+function copyTarja(el, l1, l2) {
+  navigator.clipboard.writeText(`${l1}\t${l2}`);
+  el.classList.add('copied');
+  el.querySelector('.copy-badge').textContent = 'COPIADO!';
+  showToast('Tarja copiada!');
+  setTimeout(() => {
+    el.classList.remove('copied');
+    el.querySelector('.copy-badge').textContent = 'COPIAR';
+  }, 2000);
+}
+
+function copyAllFlowics() {
+  let text = 'HEADER\tSUB-HEADER\n';
+  generatedTarjas.forEach(section => {
+    section.opcoes.forEach(op => {
+      text += `${op.linha1}\t${op.linha2}\n`;
+    });
+  });
+  navigator.clipboard.writeText(text);
+  showToast('Todas as tarjas copiadas (formato Flowics)!');
+}
+
+function copyAllCSV() {
+  let text = 'TIPO,HEADER,SUB-HEADER\n';
+  generatedTarjas.forEach(section => {
+    section.opcoes.forEach(op => {
+      text += `"${section.tipo}","${op.linha1}","${op.linha2}"\n`;
+    });
+  });
+  navigator.clipboard.writeText(text);
+  showToast('CSV copiado!');
+}
+
+// ==================== UTILS ====================
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function escapeJs(str) {
+  return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+// Hidden class
+document.head.insertAdjacentHTML('beforeend', '<style>.hidden{display:none!important}</style>');
+</script>
+
+</body>
+</html>
