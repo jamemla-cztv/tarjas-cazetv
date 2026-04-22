@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gerador de Tarjas CazéTV</title>
+<title>GMN Tarja</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
@@ -359,49 +359,6 @@
     color: var(--text-dim);
   }
 
-  /* Modal */
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.7);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 200;
-  }
-
-  .modal-overlay.show { display: flex; }
-
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 24px;
-    max-width: 480px;
-    width: 90%;
-  }
-
-  .modal h3 {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 8px;
-  }
-
-  .modal p {
-    font-size: 13px;
-    color: var(--text-dim);
-    margin-bottom: 16px;
-    line-height: 1.5;
-  }
-
-  .modal-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-  }
 
   /* Copy All Bar */
   .copy-all-bar {
@@ -474,12 +431,11 @@
 <!-- Header -->
 <div class="header">
   <div class="header-left">
-    <div class="logo">TARJAS<span>TV</span></div>
-    <div class="header-badge">Gerador CazéTV</div>
+    <div class="logo">GMN<span>TARJA</span></div>
   </div>
-  <div class="api-status" onclick="openApiModal()">
-    <div class="status-dot" id="statusDot"></div>
-    <span id="statusText">API não configurada</span>
+  <div class="api-status">
+    <div class="status-dot connected"></div>
+    <span>API conectada</span>
   </div>
 </div>
 
@@ -577,65 +533,20 @@
 
 </div>
 
-<!-- API Modal -->
-<div class="modal-overlay" id="apiModal">
-  <div class="modal">
-    <h3>Configurar API Claude</h3>
-    <p>Insira sua chave da API Anthropic para habilitar a geração por IA. A chave é salva apenas no seu navegador (localStorage) e nunca é enviada para nenhum servidor além da Anthropic.</p>
-    <div class="form-group">
-      <label>API Key</label>
-      <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary btn-sm" onclick="closeApiModal()">Cancelar</button>
-      <button class="btn btn-primary btn-sm" onclick="saveApiKey()">Salvar</button>
-    </div>
-  </div>
-</div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
 // ==================== STATE ====================
-let apiKey = localStorage.getItem('cazetv_api_key') || '';
+const apiKey = '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';
 let generatedTarjas = [];
 
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', () => {
-  updateApiStatus();
   setupChips();
 });
 
-// ==================== API KEY ====================
-function openApiModal() {
-  document.getElementById('apiModal').classList.add('show');
-  document.getElementById('apiKeyInput').value = apiKey;
-}
-
-function closeApiModal() {
-  document.getElementById('apiModal').classList.remove('show');
-}
-
-function saveApiKey() {
-  apiKey = document.getElementById('apiKeyInput').value.trim();
-  localStorage.setItem('cazetv_api_key', apiKey);
-  updateApiStatus();
-  closeApiModal();
-  showToast('API Key salva!');
-}
-
-function updateApiStatus() {
-  const dot = document.getElementById('statusDot');
-  const text = document.getElementById('statusText');
-  if (apiKey) {
-    dot.classList.add('connected');
-    text.textContent = 'API conectada';
-  } else {
-    dot.classList.remove('connected');
-    text.textContent = 'API não configurada';
-  }
-}
 
 // ==================== CHIPS ====================
 function setupChips() {
@@ -659,12 +570,11 @@ async function generate() {
 
   if (!teams) { showToast('Preencha pelo menos os times/atletas!'); return; }
   if (types.length === 0) { showToast('Selecione pelo menos um tipo de tarja!'); return; }
-  if (!apiKey) { openApiModal(); return; }
 
   const btn = document.getElementById('generateBtn');
   btn.disabled = true;
 
-  showLoading();
+  showLoading('Pesquisando dados atualizados na web e gerando tarjas...');
 
   try {
     const tarjas = await callClaude(sport, competition, teams, phase, context, types);
@@ -703,11 +613,15 @@ REGRAS ABSOLUTAS:
 - Parece alguém empolgado falando ao vivo, NÃO release ou GC frio
 - Use "tá", "vamo", "cadê", "partiu" quando natural
 - NUNCA use linguagem formal: "inicia-se", "encontra-se", "válido pela"
+- NUNCA use travessão (— ou –) em nenhuma tarja. Nem como separador, nem como recurso estilístico. PROIBIDO.
 - NUNCA seja genérico: "Grande jogo hoje", "Partida importante"
 - Humor afetivo, NUNCA deboche cruel ou diminuição de atleta
 - Em derrota brasileira: acolhimento e valorização, não deboche
-- Emoji com moderação (1-2 por tarja no máximo, só quando reforçar)
-- Gere 2-3 opções por tipo de tarja
+- SEMPRE coloque 1-2 emojis relativos ao contexto da tarja NO FINAL da Linha 1 (Header). Toda tarja precisa ter emoji no final do header.
+- Gere EXATAMENTE 5 opções por tipo de tarja
+- SEMPRE pesquise na web ANTES de gerar as tarjas. Use os dados da pesquisa como fonte única de verdade.
+- USE APENAS dados encontrados na pesquisa web. NUNCA invente nomes de jogadores, técnicos, resultados ou posições na tabela.
+- ERRO DE INFORMAÇÃO É INADMISSÍVEL numa transmissão ao vivo. Se a pesquisa não trouxe um dado, NÃO cite. Melhor ser genérico do que errar.
 
 Retorne APENAS um JSON válido no formato:
 [
@@ -727,12 +641,21 @@ Esporte: ${sport || 'não especificado'}
 Competição: ${competition || 'não especificada'}
 Times/Atletas: ${teams}
 Fase: ${phase || 'não especificada'}
-Contexto: ${context || 'sem contexto adicional'}
+Contexto adicional: ${context || 'nenhum'}
 
 Tipos de tarja pedidos:
 - ${requestedTypes}
 
-Gere 2-3 opções criativas para cada tipo. Retorne APENAS o JSON.`;
+PASSO 1 (OBRIGATÓRIO): Pesquise na web ANTES de gerar qualquer tarja. Busque informações ATUALIZADAS sobre:
+1. Elenco atual e escalação provável dos times/atletas
+2. Posição na tabela, últimos resultados, fase da competição
+3. Técnico atual de cada time
+4. Artilheiro e destaques recentes
+5. Contexto relevante (lesões, suspensões, recordes, confronto direto)
+
+PASSO 2: Gere as tarjas usando SOMENTE dados encontrados na pesquisa. Se um dado não apareceu na pesquisa, NÃO use. NUNCA invente ou chute informações.
+
+Gere EXATAMENTE 5 opções criativas para cada tipo. Cada Linha 1 (header) DEVE terminar com 1-2 emojis relativos ao contexto. Retorne APENAS o JSON.`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -744,7 +667,15 @@ Gere 2-3 opções criativas para cada tipo. Retorne APENAS o JSON.`;
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
+      max_tokens: 16000,
+      tools: [
+        {
+          type: 'web_search_20250305',
+          name: 'web_search',
+          max_uses: 5,
+          allowed_domains: ['ge.globo.com', 'espn.com.br', 'espn.com', 'transfermarkt.com.br', 'transfermarkt.com', 'flashscore.com.br', 'flashscore.com', 'cbf.com.br', 'fifa.com', 'uefa.com', 'sofascore.com', 'ogol.com.br', 'wikipedia.org', 'goal.com']
+        }
+      ],
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }]
     })
@@ -756,8 +687,51 @@ Gere 2-3 opções criativas para cada tipo. Retorne APENAS o JSON.`;
     throw new Error(err.error?.message || `Erro ${resp.status}`);
   }
 
-  const data = await resp.json();
-  const text = data.content[0].text.trim();
+  let data = await resp.json();
+
+  // Se a API retornar pause_turn, precisamos continuar a conversa
+  if (data.stop_reason === 'pause_turn') {
+    const continueResp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 16000,
+        tools: [
+          {
+            type: 'web_search_20250305',
+            name: 'web_search',
+            max_uses: 5,
+            allowed_domains: ['ge.globo.com', 'espn.com.br', 'espn.com', 'transfermarkt.com.br', 'transfermarkt.com', 'flashscore.com.br', 'flashscore.com', 'cbf.com.br', 'fifa.com', 'uefa.com', 'sofascore.com', 'ogol.com.br', 'wikipedia.org', 'goal.com']
+          }
+        ],
+        system: systemPrompt,
+        messages: [
+          { role: 'user', content: userPrompt },
+          { role: 'assistant', content: data.content },
+          { role: 'user', content: 'Continue gerando as tarjas com base nos dados que você encontrou. Retorne APENAS o JSON.' }
+        ]
+      })
+    });
+    if (!continueResp.ok) throw new Error('Erro ao continuar geração.');
+    data = await continueResp.json();
+  }
+
+  // Extrair o texto final da resposta (pode ter múltiplos blocos com web search)
+  let text = '';
+  for (const block of data.content) {
+    if (block.type === 'text') {
+      text += block.text;
+    }
+  }
+  text = text.trim();
+
+  if (!text) throw new Error('Resposta vazia da IA. Tente novamente.');
 
   // Parse JSON from response
   let json;
@@ -766,6 +740,7 @@ Gere 2-3 opções criativas para cada tipo. Retorne APENAS o JSON.`;
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     json = JSON.parse(jsonMatch ? jsonMatch[0] : text);
   } catch (e) {
+    console.error('Resposta bruta:', text);
     throw new Error('Erro ao processar resposta da IA. Tente novamente.');
   }
 
@@ -773,11 +748,11 @@ Gere 2-3 opções criativas para cada tipo. Retorne APENAS o JSON.`;
 }
 
 // ==================== RENDER ====================
-function showLoading() {
+function showLoading(msg = 'Pesquisando dados atualizados e gerando tarjas...') {
   document.getElementById('resultsBody').innerHTML = `
     <div class="loading">
       <div class="spinner"></div>
-      <div class="loading-text">Gerando tarjas no estilo CazéTV...</div>
+      <div class="loading-text">${msg}</div>
     </div>
   `;
   document.getElementById('resultActions').classList.add('hidden');
